@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Datos para que el móvil la trate como una app -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="theme-color" content="#1b1f3b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GAMELOG">
+<title>GAMELOG · Mi colección de videojuegos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   1. PALETA "MULTICOLOR PIXEL" Y AJUSTES GENERALES
+   Cambia estos colores y cambia toda la app.
+   ========================================================= */
+:root{
+  --bg:#1b1f3b;      /* fondo principal */
+  --bg2:#242a52;     /* tarjetas */
+  --bg3:#2e3466;     /* cajas internas */
+  --ink:#0d1024;     /* "negro" de los bordes */
+  --line:#f2f2f2;    /* bordes claros */
+  --txt:#ffffff;
+  --dim:#aab2e6;     /* texto secundario */
+  --red:#ff5c5c; --yel:#ffd23f; --grn:#4ade80; --blu:#5cc8ff; --pur:#b07cff; --org:#ff9f43;
+  --pixel:'Press Start 2P', monospace;
+  --body:'VT323', monospace;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{touch-action:manipulation;overscroll-behavior-y:none}
+button{-webkit-user-select:none;user-select:none}
+html,body{margin:0;background:var(--bg);color:var(--txt)}
+body{font-family:var(--body);font-size:21px;line-height:1.15;min-height:100vh;
+  padding-top:var(--safe-t);padding-bottom:calc(84px + var(--safe-b));overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+img{display:block;max-width:100%}
+.hidden{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Fondo: rejilla de píxeles que se desplaza muy despacio */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.035) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.035) 2px,transparent 2px);
+  background-size:24px 24px;animation:grid 30s linear infinite}
+@keyframes grid{to{background-position:0 240px}}
+
+/* Efecto CRT (líneas de tele antigua). Se activa/desactiva en Ajustes */
+body.crt::after{content:"";position:fixed;inset:0;z-index:999;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.55)}
+
+/* =========================================================
+   2. PIEZAS REUTILIZABLES (botones, cajas, chips)
+   ========================================================= */
+.wrap{max-width:980px;margin:0 auto;padding:16px 14px}
+.px{font-family:var(--pixel);letter-spacing:.5px}
+.box{background:var(--bg2);border:3px solid var(--ink);box-shadow:0 0 0 3px var(--line),6px 6px 0 3px var(--ink);margin:3px}
+.btn{font-family:var(--pixel);font-size:10px;line-height:1.4;padding:12px 14px;border:3px solid var(--ink);
+  background:var(--yel);color:var(--ink);box-shadow:4px 4px 0 var(--ink);cursor:pointer;text-transform:uppercase;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .05s}
+.btn:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--ink)}
+.btn:focus-visible{outline:3px dashed var(--yel);outline-offset:4px}
+.btn.red{background:var(--red)}.btn.grn{background:var(--grn)}.btn.blu{background:var(--blu)}.btn.pur{background:var(--pur)}.btn.org{background:var(--org)}
+.btn.ghost{background:var(--bg3);color:var(--txt)}
+.btn.sm{font-size:8px;padding:8px 9px;box-shadow:3px 3px 0 var(--ink)}
+.btn.full{width:100%}
+.chip{font-family:var(--pixel);font-size:8px;padding:6px 8px;border:2px solid currentColor;display:inline-block;white-space:nowrap;text-transform:uppercase;line-height:1.3}
+.chip.fill{color:var(--ink)!important;border-color:var(--ink)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--dim)}
+h2.ttl{font-family:var(--pixel);font-size:14px;margin:6px 0 16px;line-height:1.5}
+h3.sub{font-family:var(--pixel);font-size:10px;margin:22px 0 12px;color:var(--yel);line-height:1.5}
+
+/* Formularios */
+label.f{display:block;margin:12px 0 4px;font-family:var(--pixel);font-size:9px;color:var(--dim);line-height:1.4}
+input[type=text],input[type=number],input[type=date],input[type=search],select,textarea{
+  width:100%;background:#12152b;border:3px solid var(--line);padding:8px 10px;font-size:21px;border-radius:0;outline:none;color:var(--txt)}
+input:focus,select:focus,textarea:focus{border-color:var(--yel)}
+textarea{min-height:90px;resize:vertical}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--yel) 50%),linear-gradient(135deg,var(--yel) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 55%,calc(100% - 12px) 55%;background-size:6px 6px;background-repeat:no-repeat;padding-right:30px}
+input[type=date]{color-scheme:dark}
+
+/* =========================================================
+   3. PANTALLA DE INICIO (menú tipo videojuego)
+   ========================================================= */
+.logo{font-family:var(--pixel);font-size:clamp(28px,9vw,54px);text-align:center;margin:26px 0 6px;text-shadow:4px 4px 0 var(--ink);letter-spacing:2px}
+.logo span{display:inline-block;animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px)}}
+.tagline{text-align:center;font-family:var(--pixel);font-size:9px;color:var(--dim);margin-bottom:18px;line-height:1.6}
+.blink{animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.player{padding:14px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;margin-bottom:20px}
+.lvl{width:64px;height:64px;background:var(--yel);color:var(--ink);border:3px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--pixel);box-shadow:3px 3px 0 var(--ink)}
+.lvl b{font-size:20px}.lvl small{font-size:7px}
+.xpbar{height:16px;background:var(--ink);border:3px solid var(--line);margin-top:8px;position:relative}
+.xpbar i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--grn) 0 8px,#2fc56a 8px 10px);transition:width .6s steps(12)}
+.menu{display:grid;gap:12px;max-width:520px;margin:0 auto}
+.menu button{position:relative;text-align:left;justify-content:space-between;font-size:11px;padding:15px 16px 15px 34px}
+.menu button::before{content:"►";position:absolute;left:12px;opacity:0;color:var(--ink)}
+.menu button:focus::before,.menu button:hover::before{opacity:1;animation:blink .6s steps(1) infinite}
+.menu .cnt{font-size:9px;background:var(--ink);color:var(--txt);padding:4px 6px}
+.banner{border:3px dashed var(--yel);padding:12px;margin:0 auto 18px;max-width:520px;color:var(--yel);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.status-pill{font-family:var(--pixel);font-size:8px;text-align:center;margin:18px 0 0;color:var(--dim);line-height:1.6}
+.status-pill.ok{color:var(--grn)}.status-pill.warn{color:var(--yel)}
+
+/* =========================================================
+   4. COLECCIÓN (pestañas, filtros, rejilla de juegos)
+   ========================================================= */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.tabs button{font-family:var(--pixel);font-size:8px;padding:10px 4px;border:3px solid var(--ink);background:var(--bg3);color:var(--txt);cursor:pointer;line-height:1.5;box-shadow:3px 3px 0 var(--ink)}
+.tabs button.on{color:var(--ink)}
+.tabs button b{display:block;font-size:12px;margin-top:4px}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.filters .wide{grid-column:1/-1}
+.fams{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none}
+.fams::-webkit-scrollbar{display:none}
+.fams button{flex:none;cursor:pointer;background:transparent}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.card{background:var(--bg2);border:3px solid var(--c,var(--line));box-shadow:4px 4px 0 var(--ink);cursor:pointer;display:flex;flex-direction:column;position:relative;transition:transform .08s}
+.card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+.card:focus-visible{outline:3px dashed var(--yel);outline-offset:3px}
+.card .cv{aspect-ratio:3/4;border-bottom:3px solid var(--c,var(--line))}
+.card .bd{padding:8px 8px 10px;display:flex;flex-direction:column;gap:5px;flex:1}
+.card .t{font-size:20px;line-height:1;word-break:break-word}
+.card .meta{white-space:nowrap;display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:18px}
+.card .mv{margin-top:auto}
+.badge100{position:absolute;top:6px;right:6px;font-family:var(--pixel);font-size:8px;background:var(--yel);color:var(--ink);padding:5px;border:2px solid var(--ink)}
+.prio{position:absolute;top:6px;left:6px}
+.empty{text-align:center;padding:40px 16px}
+.list-info{font-family:var(--pixel);font-size:8px;color:var(--dim);margin:4px 0 12px;line-height:1.6}
+
+/* Portadas: foto o "sprite" generado */
+.cover{width:100%;height:100%;object-fit:cover;image-rendering:auto;background:var(--bg3)}
+.gencover{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px;
+  background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.08),transparent 60%),repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 2px,transparent 2px 4px),var(--bg3)}
+.gencover svg{width:52%;height:auto;image-rendering:pixelated;filter:drop-shadow(3px 3px 0 var(--ink))}
+.gencover span{font-family:var(--pixel);font-size:7px;text-align:center;line-height:1.5;max-height:3em;overflow:hidden;word-break:break-word}
+
+/* Botón flotante para añadir */
+.fab{position:fixed;right:18px;bottom:calc(98px + var(--safe-b));z-index:40;width:62px;height:62px;font-size:26px;padding:0;background:var(--grn)}
+
+/* =========================================================
+   5. VENTANAS (ficha de juego, formulario, avisos)
+   ========================================================= */
+.modal{position:fixed;inset:0;z-index:100;background:rgba(8,10,24,.82);display:flex;align-items:flex-end;justify-content:center;padding:0}
+.modal .win{width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--bg);border:3px solid var(--line);border-bottom:none;padding:18px 16px calc(22px + var(--safe-b));animation:up .18s steps(4)}
+@media(min-width:700px){.modal{align-items:center}.modal .win{border-bottom:3px solid var(--line);box-shadow:8px 8px 0 var(--ink)}}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.winhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.winhead h2{font-family:var(--pixel);font-size:12px;margin:0;line-height:1.5}
+.x{background:var(--red);border:3px solid var(--ink);width:40px;height:40px;font-family:var(--pixel);font-size:12px;cursor:pointer;color:var(--ink);flex:none;box-shadow:3px 3px 0 var(--ink)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{font-family:var(--pixel);font-size:8px;padding:10px 4px;border:3px solid var(--ink);background:var(--bg3);cursor:pointer;line-height:1.4}
+.rate{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.rate button{aspect-ratio:1;border:2px solid var(--ink);background:var(--bg3);font-family:var(--pixel);font-size:8px;cursor:pointer;padding:0}
+.rate button.on{background:var(--yel);color:var(--ink)}
+.check{display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;user-select:none}
+.check i{width:28px;height:28px;border:3px solid var(--line);display:flex;align-items:center;justify-content:center;font-style:normal;font-family:var(--pixel);font-size:10px;color:var(--ink)}
+.check.on i{background:var(--grn)}
+.photo{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center}
+.photo .pv{aspect-ratio:3/4;border:3px solid var(--line);overflow:hidden}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.err{color:var(--red);font-size:18px;margin-top:4px}
+.detail-top{display:grid;grid-template-columns:42% 1fr;gap:14px}
+.detail-top .pv{aspect-ratio:3/4;border:3px solid var(--c);box-shadow:4px 4px 0 var(--ink)}
+.stats-mini{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.stats-mini div{background:var(--bg3);padding:6px 8px;font-size:18px}
+.stats-mini b{display:block;font-family:var(--pixel);font-size:11px;margin-top:4px}
+.notes{background:var(--bg3);padding:10px;margin-top:14px;white-space:pre-wrap;font-size:20px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.actions .wide{grid-column:1/-1}
+
+/* Avisos flotantes */
+.toasts{position:fixed;top:calc(10px + var(--safe-t));left:50%;transform:translateX(-50%);z-index:300;display:grid;gap:8px;width:min(92vw,420px)}
+.toast{background:var(--bg2);border:3px solid var(--c,var(--yel));box-shadow:4px 4px 0 var(--ink);padding:10px 12px;display:flex;gap:10px;align-items:center;animation:up .2s steps(4)}
+.toast .px{font-size:8px;color:var(--c,var(--yel));line-height:1.5}
+
+/* Celebración "STAGE CLEAR" */
+.party{position:fixed;inset:0;z-index:200;background:rgba(8,10,24,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;overflow:hidden;cursor:pointer}
+.party h1{font-family:var(--pixel);font-size:clamp(22px,7vw,44px);margin:0 0 16px;line-height:1.3;text-shadow:4px 4px 0 var(--ink);animation:zoom .5s steps(5)}
+@keyframes zoom{from{transform:scale(3);opacity:0}}
+.party .px{line-height:1.8}
+.confetti{position:absolute;top:-20px;width:10px;height:10px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+/* =========================================================
+   6. ESTADÍSTICAS Y LOGROS
+   ========================================================= */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.kpi{padding:12px;border:3px solid var(--c);background:var(--bg2);box-shadow:4px 4px 0 var(--ink)}
+.kpi small{font-family:var(--pixel);font-size:7px;color:var(--dim);line-height:1.6;display:block}
+.kpi b{font-family:var(--pixel);font-size:18px;display:block;margin-top:8px;color:var(--c)}
+.hbars{display:grid;gap:8px}
+.hbar{display:grid;grid-template-columns:110px 1fr 34px;gap:8px;align-items:center;font-size:19px}
+.hbar .tr{height:18px;background:var(--ink);border:2px solid var(--bg3)}
+.hbar .tr i{display:block;height:100%;background:var(--c);transition:width .6s steps(10)}
+.hbar span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vbars{display:flex;align-items:flex-end;gap:6px;height:170px;padding:10px 6px 0;border-bottom:3px solid var(--line);overflow-x:auto}
+.vbar{flex:1;min-width:26px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.vbar i{width:100%;background:var(--c);box-shadow:3px 0 0 var(--ink) inset;min-height:3px}
+.vbar b{font-family:var(--pixel);font-size:8px}
+.vlabels{display:flex;gap:6px;padding:4px 6px;overflow-x:auto}
+.vlabels span{flex:1;min-width:26px;text-align:center;font-size:17px;color:var(--dim)}
+.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.medal{padding:12px 10px;text-align:center;background:var(--bg2);border:3px solid var(--c);box-shadow:4px 4px 0 var(--ink)}
+.medal.lock{--c:#4a5085;filter:saturate(.2);opacity:.75}
+.medal svg{width:44px;height:44px;image-rendering:pixelated;margin:0 auto 8px;display:block}
+.medal b{font-family:var(--pixel);font-size:8px;display:block;line-height:1.5;margin-bottom:6px}
+.medal p{margin:0;font-size:17px;color:var(--dim);line-height:1}
+.medal .pg{height:8px;background:var(--ink);margin-top:8px}
+.medal .pg i{display:block;height:100%;background:var(--c)}
+.levels{display:grid;gap:6px}
+.levels div{display:flex;justify-content:space-between;padding:6px 10px;background:var(--bg2);font-size:19px}
+.levels div.on{background:var(--yel);color:var(--ink)}
+
+/* =========================================================
+   7. BARRA DE NAVEGACIÓN INFERIOR
+   ========================================================= */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--ink);border-top:3px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:var(--safe-b)}
+.nav button{background:none;border:0;padding:10px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--dim);font-size:17px}
+.nav button svg{width:24px;height:24px}
+.nav button.on{color:var(--txt);background:var(--bg2)}
+.nav button.on span{color:var(--yel)}
+
+.panel{padding:14px}
+.panel+.panel{margin-top:16px}
+.toggle{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:2px dashed var(--bg3)}
+.switch{width:64px;height:30px;border:3px solid var(--line);background:var(--ink);position:relative;cursor:pointer;flex:none}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;background:var(--dim);transition:left .1s steps(3)}
+.switch.on{background:var(--grn)}.switch.on::after{left:37px;background:var(--ink)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="crt">
+
+<main id="app" class="wrap" aria-live="polite"></main>
+
+<button id="fab" class="btn fab hidden" aria-label="Añadir juego">+</button>
+
+<nav class="nav" id="nav" aria-label="Navegación principal"></nav>
+<div class="toasts" id="toasts"></div>
+<div id="layer"></div>
+
+<script>
+/* =========================================================
+   LÓGICA PURA (sin pantalla): consolas, niveles, logros y
+   estadísticas. Está separada para poder probarla aparte.
+   ========================================================= */
+/*LOGIC-START*/
+const FAMILIES = {
+  nintendo:   { name:'Nintendo',    color:'#ff5c5c', list:['Switch 2','Switch','Wii U','Wii','GameCube','Nintendo 64','Super Nintendo','NES','3DS','DS','Game Boy Advance','Game Boy'] },
+  playstation:{ name:'PlayStation', color:'#5cc8ff', list:['PS5','PS4','PS3','PS2','PS1','PS Vita','PSP'] },
+  pc:         { name:'PC',          color:'#ffd23f', list:['PC (Steam)','PC (Epic)','PC (GOG)','PC (otro)'] },
+  retro:      { name:'Retro',       color:'#b07cff', list:['Mega Drive','Master System','Dreamcast','Saturn','Arcade','Otra retro'] },
+  otras:      { name:'Otras',       color:'#ff9f43', list:[] }
+};
+const STATUS = {
+  pasado:   { name:'Pasados',     one:'Pasado',     color:'#4ade80' },
+  pendiente:{ name:'Pendientes',  one:'Pendiente',  color:'#ff5c5c' },
+  comprar:  { name:'Por comprar', one:'Por comprar',color:'#5cc8ff' }
+};
+const PRIORITY = { alta:{name:'Alta',color:'#ff5c5c',n:3}, media:{name:'Media',color:'#ffd23f',n:2}, baja:{name:'Baja',color:'#4ade80',n:1} };
+const LEVEL_TITLES = ['Novato','Aprendiz','Jugador','Jugón','Veterano','Experto','Maestro','Gran maestro','Leyenda','Mito'];
+
+/** ¿A qué familia pertenece una consola? (las personalizadas van a "Otras") */
+function familyOf(platform){
+  for (const k in FAMILIES) if (FAMILIES[k].list.includes(platform)) return k;
+  return 'otras';
+}
+function famColor(platform){ return FAMILIES[familyOf(platform)].color; }
+
+/** Calcula todas las estadísticas a partir de la lista de juegos */
+function computeStats(games, settings){
+  settings = settings || {};
+  const s = { total:games.length, pasado:0, pendiente:0, comprar:0, hours:0, ratedSum:0, rated:0, complete:0,
+    wishValue:0, photos:0, tens:0, byPlatform:{}, byFamily:{}, byYear:{}, ratings:Array(10).fill(0),
+    famsBeaten:new Set(), retroBeaten:0, wishToGlory:0, best:null, longest:null };
+  for (const g of games){
+    s[g.status] = (s[g.status]||0) + 1;
+    const h = Number(g.hours)||0; s.hours += h;
+    if (g.cover) s.photos++;
+    if (g.rating){ s.rated++; s.ratedSum += g.rating; s.ratings[g.rating-1]++; if (g.rating===10) s.tens++; }
+    if (g.status==='comprar') s.wishValue += Number(g.price)||0;
+    if (g.status==='pasado'){
+      if (g.complete100) s.complete++;
+      s.byPlatform[g.platform] = (s.byPlatform[g.platform]||0)+1;
+      const f = familyOf(g.platform); s.byFamily[f] = (s.byFamily[f]||0)+1; s.famsBeaten.add(f);
+      if (f==='retro') s.retroBeaten++;
+      if (g.wasWish) s.wishToGlory++;
+      const y = (g.finishedAt||'').slice(0,4); if (/^\d{4}$/.test(y)) s.byYear[y] = (s.byYear[y]||0)+1;
+      if (g.rating && (!s.best || g.rating > s.best.rating)) s.best = g;
+    }
+    if (h && (!s.longest || h > (Number(s.longest.hours)||0))) s.longest = g;
+  }
+  s.avg = s.rated ? s.ratedSum / s.rated : 0;
+  s.backups = settings.lastBackup ? 1 : 0;
+  return s;
+}
+
+/** Lista de logros. "goal" es la meta y "val" cuánto llevas. */
+const ACHIEVEMENTS = [
+  { id:'first',    name:'Primer jefe',        desc:'Pásate tu primer juego',            color:'#4ade80', val:s=>s.pasado,        goal:1 },
+  { id:'five',     name:'Racha de 5',         desc:'Pásate 5 juegos',                   color:'#4ade80', val:s=>s.pasado,        goal:5 },
+  { id:'ten',      name:'Veterano',           desc:'Pásate 10 juegos',                  color:'#4ade80', val:s=>s.pasado,        goal:10 },
+  { id:'25',       name:'Leyenda viva',       desc:'Pásate 25 juegos',                  color:'#4ade80', val:s=>s.pasado,        goal:25 },
+  { id:'50',       name:'Salón de la fama',   desc:'Pásate 50 juegos',                  color:'#4ade80', val:s=>s.pasado,        goal:50 },
+  { id:'100p',     name:'Perfeccionista',     desc:'Completa un juego al 100 %',        color:'#ffd23f', val:s=>s.complete,      goal:1 },
+  { id:'100p5',    name:'Completista',        desc:'5 juegos al 100 %',                 color:'#ffd23f', val:s=>s.complete,      goal:5 },
+  { id:'multi',    name:'Multiconsola',       desc:'Pásate juegos de 3 familias',       color:'#b07cff', val:s=>s.famsBeaten.size,goal:3 },
+  { id:'retro',    name:'Nostalgia',          desc:'Pásate un juego retro',             color:'#b07cff', val:s=>s.retroBeaten,   goal:1 },
+  { id:'h100',     name:'Maratón',            desc:'Acumula 100 horas',                 color:'#5cc8ff', val:s=>s.hours,         goal:100 },
+  { id:'h500',     name:'¿Qué es dormir?',    desc:'Acumula 500 horas',                 color:'#5cc8ff', val:s=>s.hours,         goal:500 },
+  { id:'ten10',    name:'Obra maestra',       desc:'Ponle un 10 a un juego',            color:'#ff9f43', val:s=>s.tens,          goal:1 },
+  { id:'critic',   name:'Crítico',            desc:'Puntúa 10 juegos',                  color:'#ff9f43', val:s=>s.rated,         goal:10 },
+  { id:'wish',     name:'Lista de la compra', desc:'5 juegos en Por comprar',           color:'#5cc8ff', val:s=>s.comprar,       goal:5 },
+  { id:'pile',     name:'Montaña de pendientes',desc:'Ten 10 juegos pendientes',        color:'#ff5c5c', val:s=>s.pendiente,     goal:10 },
+  { id:'glory',    name:'Del deseo a la gloria',desc:'Pásate un juego que estaba en Por comprar', color:'#ff5c5c', val:s=>s.wishToGlory, goal:1 },
+  { id:'gallery',  name:'Galería',            desc:'Pon foto a 10 juegos',              color:'#ff9f43', val:s=>s.photos,        goal:10 },
+  { id:'collector',name:'Coleccionista',      desc:'50 juegos entre todas las listas',  color:'#b07cff', val:s=>s.total,         goal:50 },
+  { id:'backup',   name:'Partida guardada',   desc:'Haz una copia de seguridad',        color:'#4ade80', val:s=>s.backups,       goal:1 }
+];
+function achievementState(stats){
+  return ACHIEVEMENTS.map(a => { const v = a.val(stats); return { ...a, v:Math.min(v,a.goal), done:v>=a.goal }; });
+}
+
+/** Experiencia: pasado 100, al 100 % +50, pendiente 10, por comprar 5, cada logro 50 */
+function computeXP(games, settings){
+  let xp = 0;
+  for (const g of games){
+    if (g.status==='pasado'){ xp += 100; if (g.complete100) xp += 50; }
+    else if (g.status==='pendiente') xp += 10;
+    else xp += 5;
+  }
+  xp += 50 * achievementState(computeStats(games, settings)).filter(a=>a.done).length;
+  return xp;
+}
+/** Nivel N necesita 100·N·(N−1) XP acumulada (200, 600, 1200, 2000...) */
+function levelInfo(xp){
+  const level = Math.max(1, Math.floor((1 + Math.sqrt(1 + 4*xp/100)) / 2));
+  const cur = 100*level*(level-1), next = 100*(level+1)*level;
+  return { level, xp, cur, next, pct: (xp-cur)/(next-cur), title: LEVEL_TITLES[Math.min(level-1, LEVEL_TITLES.length-1)] };
+}
+
+/** Filtra y ordena la colección según lo elegido en pantalla */
+function filterGames(games, f){
+  const q = (f.q||'').trim().toLowerCase();
+  let out = games.filter(g =>
+    (f.tab==='todo' || g.status===f.tab) &&
+    (f.fam==='all' || familyOf(g.platform)===f.fam) &&
+    (f.plat==='all' || g.platform===f.plat) &&
+    (!f.minRating || (g.rating||0) >= f.minRating) &&
+    (!q || (g.title||'').toLowerCase().includes(q) || (g.notes||'').toLowerCase().includes(q) || (g.platform||'').toLowerCase().includes(q))
+  );
+  const by = {
+    reciente: (a,b)=> (b.updatedAt||0)-(a.updatedAt||0),
+    fecha:    (a,b)=> (b.finishedAt||'').localeCompare(a.finishedAt||'') || (b.updatedAt||0)-(a.updatedAt||0),
+    nota:     (a,b)=> (b.rating||0)-(a.rating||0) || a.title.localeCompare(b.title,'es'),
+    titulo:   (a,b)=> a.title.localeCompare(b.title,'es',{sensitivity:'base'}),
+    horas:    (a,b)=> (Number(b.hours)||0)-(Number(a.hours)||0),
+    prioridad:(a,b)=> ((PRIORITY[b.priority]||{n:0}).n-(PRIORITY[a.priority]||{n:0}).n) || a.title.localeCompare(b.title,'es'),
+    precio:   (a,b)=> (Number(a.price)||0)-(Number(b.price)||0)
+  };
+  out.sort(by[f.sort] || by.reciente);
+  return out;
+}
+
+/** Comprueba y limpia los datos de una copia de seguridad antes de importarla */
+function validateBackup(obj){
+  if (!obj || typeof obj!=='object') throw new Error('El archivo no tiene el formato correcto.');
+  const list = Array.isArray(obj) ? obj : obj.games;
+  if (!Array.isArray(list)) throw new Error('No encuentro la lista de juegos en el archivo.');
+  const games = [];
+  for (const raw of list){
+    if (!raw || typeof raw.title!=='string' || !raw.title.trim()) continue;
+    const g = {
+      id: (typeof raw.id==='string' && /^g_[A-Za-z0-9_-]{4,60}$/.test(raw.id)) ? raw.id : 'g_' + Math.random().toString(36).slice(2,12),
+      title: raw.title.trim().slice(0,120),
+      platform: String(raw.platform||'PC (otro)').slice(0,40),
+      status: STATUS[raw.status] ? raw.status : 'pendiente',
+      rating: Number.isInteger(raw.rating) && raw.rating>=1 && raw.rating<=10 ? raw.rating : null,
+      finishedAt: /^\d{4}-\d{2}-\d{2}$/.test(raw.finishedAt||'') ? raw.finishedAt : '',
+      hours: Number(raw.hours)>0 ? Math.round(Number(raw.hours)*10)/10 : null,
+      complete100: !!raw.complete100,
+      price: Number(raw.price)>0 ? Math.round(Number(raw.price)*100)/100 : null,
+      priority: PRIORITY[raw.priority] ? raw.priority : 'media',
+      notes: String(raw.notes||'').slice(0,4000),
+      cover: (typeof raw.cover==='string' && /^data:image\/(jpeg|png|webp);base64,/.test(raw.cover) && raw.cover.length < 200000) ? raw.cover : '',
+      wasWish: !!raw.wasWish,
+      createdAt: Number(raw.createdAt)||Date.now(),
+      updatedAt: Number(raw.updatedAt)||Date.now()
+    };
+    games.push(g);
+  }
+  return { games, settings: (obj && obj.settings && typeof obj.settings==='object') ? obj.settings : null };
+}
+/*LOGIC-END*/
+</script>
+
+<script>
+/* =========================================================
+   GUARDADO DE DATOS (en el propio dispositivo)
+   Se usa IndexedDB, la "base de datos" interna del navegador:
+   aguanta mucho más que localStorage (fotos incluidas) y
+   funciona sin internet. Cada dispositivo tiene sus datos:
+   para pasarlos de uno a otro, usa la copia de seguridad.
+   ========================================================= */
+const DB_NAME = 'gamelog', DB_STORE = 'estado', LOCAL_KEY = 'gamelog_v1';
+const DEFAULT_SETTINGS = { sound:false, crt:true, player:'XURDE', customPlatforms:[], lastBackup:'', lastChange:0 };
+
+/* Ayudantes mínimos para hablar con IndexedDB */
+function idbOpen(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(DB_STORE);
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+function idbGet(db, key){
+  return new Promise((res, rej) => { const r = db.transaction(DB_STORE).objectStore(DB_STORE).get(key); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+function idbPut(db, key, val){
+  return new Promise((res, rej) => {
+    const t = db.transaction(DB_STORE, 'readwrite'); t.objectStore(DB_STORE).put(val, key);
+    t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  });
+}
+
+const Store = {
+  mode: 'loading',          // 'loading' mientras lee los datos, luego 'local'
+  games: new Map(),
+  settings: { ...DEFAULT_SETTINGS },
+  db: null,
+  stale: false,
+  saving: Promise.resolve(), // cola: un guardado detrás de otro
+
+  async init(onChange){
+    this.onChange = onChange;
+    try {
+      this.db = await idbOpen();
+      const saved = await idbGet(this.db, 'datos');
+      if (saved) this.load(saved);
+      else {
+        // Si había datos de una versión anterior en localStorage, se pasan aquí
+        const old = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null');
+        if (old){ this.load(old); await this.persist(); }
+      }
+    } catch(e){
+      // Plan B si IndexedDB no está disponible
+      this.db = null;
+      try { const old = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null'); if (old) this.load(old); } catch(e2){}
+    }
+    // Pide al sistema que no borre estos datos para liberar espacio
+    try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
+    this.mode = 'local';
+    this.onChange();
+  },
+  load(raw){
+    (raw.games || []).forEach(g => this.games.set(g.id, g));
+    Object.assign(this.settings, raw.settings || {});
+  },
+  /** Guarda todo el estado en el dispositivo */
+  persist(){
+    const data = JSON.parse(JSON.stringify({ games:[...this.games.values()], settings:this.settings }));
+    this.saving = this.saving.catch(() => {}).then(async () => {
+      try {
+        if (this.db) await idbPut(this.db, 'datos', data);
+        else localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+      } catch(e){
+        toast('No se pudo guardar en el dispositivo. Exporta una copia y quita alguna foto.', '#ff5c5c');
+        throw e;
+      }
+    });
+    return this.saving;
+  },
+
+  list(){ return [...this.games.values()]; },
+
+  async saveGame(g){
+    g = JSON.parse(JSON.stringify(g));          // quita valores "undefined"
+    g.updatedAt = Date.now();
+    this.games.set(g.id, g);
+    this.settings.lastChange = Date.now();
+    this.onChange();
+    await this.persist();
+  },
+  async deleteGame(id){
+    this.games.delete(id);
+    this.onChange();
+    await this.persist();
+  },
+  async saveSettings(patch, silent){
+    Object.assign(this.settings, patch);
+    if (!silent) this.onChange();
+    await this.persist();
+  },
+  /** Importar: "merge" mezcla con lo que hay; "replace" borra antes */
+  async importAll(games, mode, progress){
+    if (mode === 'replace') this.games.clear();
+    games.forEach(g => this.games.set(g.id, g));
+    progress && progress('Guardando ' + games.length + ' juegos...');
+    this.onChange();
+    await this.persist();
+  }
+};
+
+/* =========================================================
+   SONIDOS DE 8 BITS (creados con código, sin archivos)
+   ========================================================= */
+let audioCtx = null;
+function sfx(kind){
+  if (!Store.settings.sound) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const songs = {
+      click:[[660,.05]], coin:[[988,.07],[1319,.18]], del:[[440,.08],[330,.08],[220,.14]],
+      clear:[[523,.1],[659,.1],[784,.1],[1047,.12],[784,.08],[1047,.3]],
+      ach:[[784,.08],[988,.08],[1175,.08],[1568,.25]], err:[[180,.15],[140,.2]]
+    };
+    let t = audioCtx.currentTime;
+    for (const [f,d] of (songs[kind]||songs.click)){
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'square'; o.frequency.value = f;
+      g.gain.setValueAtTime(.06, t); g.gain.exponentialRampToValueAtTime(.001, t+d);
+      o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+d); t += d*.9;
+    }
+  } catch(e){}
+}
+</script>
+
+<script>
+/* =========================================================
+   AYUDANTES DE PANTALLA
+   ========================================================= */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtNum = (n, d=0) => new Intl.NumberFormat('es-ES',{maximumFractionDigits:d,minimumFractionDigits:d}).format(n||0);
+const fmtEur = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n||0);
+const fmtDate = s => s ? new Date(s+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}) : '';
+const fmtH = n => fmtNum(n, Number.isInteger(Number(n)) ? 0 : 1);
+const today = () => new Date().toISOString().slice(0,10);
+const newId = () => 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+
+/** Dibuja un icono pixel a partir de un "mapa" de # y . */
+function pxIcon(rows, color){
+  let r = '';
+  rows.forEach((row,y) => [...row].forEach((c,x) => { if (c==='#') r += `<rect x="${x}" y="${y}" width="1" height="1"/>`; }));
+  return `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" fill="${color||'currentColor'}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+}
+const ICONS = {
+  home:['...##...','..####..','.######.','########','.#....#.','.#.##.#.','.#.##.#.','.######.'],
+  pad: ['........','.######.','##.##.##','#...#.##','##.##.##','########','##....##','........'],
+  bars:['......##','......##','...##.##','...##.##','##.##.##','##.##.##','##.##.##','########'],
+  cup: ['########','#.####.#','#.####.#','.######.','..####..','...##...','..####..','.######.'],
+  disk:['#######.','##...###','##...###','########','#......#','#.####.#','#......#','########'],
+  medal:['..#..#..','..#..#..','...##...','..####..','.######.','.##..##.','.######.','..####..'],
+  lock:['..####..','.#....#.','.#....#.','########','###..###','###..###','########','########']
+};
+
+/** Portada generada: un "sprite" único sacado del título (diseño propio) */
+function hash(str){ let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function genCover(g){
+  let h = hash(g.title + g.platform); const rows = [];
+  for (let y=0;y<7;y++){ let half=''; for (let x=0;x<4;x++){ h = Math.imul(h ^ (h>>>13), 1274126177) >>> 0; half += (h % 100) < 52 ? '#' : '.'; }
+    rows.push(half + half.slice(0,3).split('').reverse().join('')); }
+  const c = famColor(g.platform);
+  return `<div class="gencover">${pxIcon(rows, c)}<span style="color:${c}">${esc(g.title)}</span></div>`;
+}
+function coverHTML(g){ return g.cover ? `<img class="cover" src="${g.cover}" alt="Portada de ${esc(g.title)}" loading="lazy">` : genCover(g); }
+
+function toast(msg, color, title){
+  const el = document.createElement('div'); el.className = 'toast'; el.style.setProperty('--c', color || '#ffd23f');
+  el.innerHTML = `<div>${title ? `<div class="px">${esc(title)}</div>` : ''}<div>${esc(msg)}</div></div>`;
+  const box = $('#toasts'); box.appendChild(el); while (box.children.length > 3) box.firstChild.remove(); setTimeout(() => el.remove(), 3600);
+}
+
+/** Ventana genérica (abre/cierra con animación, ESC para salir) */
+function openModal(html, onMount){
+  closeModal();
+  const m = document.createElement('div'); m.className = 'modal'; m.id = 'modal';
+  m.innerHTML = `<div class="win" role="dialog" aria-modal="true">${html}</div>`;
+  m.addEventListener('click', e => { if (e.target === m) closeModal(); });
+  $('#layer').appendChild(m); document.body.style.overflow = 'hidden';
+  onMount && onMount(m);
+  const first = m.querySelector('[autofocus]'); if (first && matchMedia('(min-width:700px)').matches) first.focus();
+  return m;
+}
+function closeModal(){ const m = $('#modal'); if (m){ m.remove(); document.body.style.overflow = ''; } }
+document.addEventListener('keydown', e => { if (e.key === 'Escape'){ closeModal(); const p = $('.party'); p && p.remove(); } });
+
+/** Pregunta de confirmación propia (el móvil no deja usar las del navegador) */
+function confirmBox(text, okLabel, okClass){
+  return new Promise(res => {
+    openModal(`<div class="winhead"><h2>¿SEGURO?</h2></div><p>${esc(text)}</p>
+      <div class="actions"><button class="btn ghost" id="cNo">Cancelar</button><button class="btn ${okClass||'red'}" id="cYes">${esc(okLabel||'Sí')}</button></div>`, m => {
+      $('#cNo', m).onclick = () => { closeModal(); res(false); };
+      $('#cYes', m).onclick = () => { closeModal(); res(true); };
+    });
+  });
+}
+
+/** Celebración con confeti pixel */
+function celebrate(title, sub, color, extra){
+  const p = document.createElement('div'); p.className = 'party';
+  const cols = ['#ff5c5c','#ffd23f','#4ade80','#5cc8ff','#b07cff','#ff9f43'];
+  let conf = '';
+  for (let i=0;i<60;i++){
+    const s = 6 + Math.random()*8;
+    conf += `<i class="confetti" style="left:${Math.random()*100}%;width:${s}px;height:${s}px;background:${cols[i%6]};animation-duration:${1.6+Math.random()*2}s;animation-delay:${Math.random()*.6}s"></i>`;
+  }
+  p.innerHTML = conf + `<h1 style="color:${color}">${esc(title)}</h1><div class="px" style="font-size:11px">${esc(sub)}</div>${extra||''}<div class="px muted blink" style="font-size:8px;margin-top:26px">TOCA PARA CONTINUAR</div>`;
+  p.onclick = () => p.remove();
+  document.body.appendChild(p);
+  setTimeout(() => p.isConnected && p.remove(), 5000);
+}
+</script>
+
+<script>
+/* =========================================================
+   ESTADO DE LA PANTALLA Y NAVEGACIÓN
+   ========================================================= */
+const UI = { view:'inicio', tab:'todo', q:'', fam:'all', plat:'all', minRating:0, sort:'reciente' };
+const VIEWS = ['inicio','juegos','stats','logros','copia','ajustes'];
+
+function go(view){
+  if (location.hash !== '#' + view) location.hash = view; else render();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', () => { const v = location.hash.slice(1); UI.view = VIEWS.includes(v) ? v : 'inicio'; render(); window.scrollTo(0,0); });
+
+function allPlatforms(){
+  const out = []; for (const k in FAMILIES) FAMILIES[k].list.forEach(p => out.push(p));
+  (Store.settings.customPlatforms||[]).forEach(p => out.push(p));
+  return out;
+}
+
+/** Recuerda los logros ya conseguidos para avisar solo de los nuevos */
+let lastAch = null, lastLevel = null;
+function checkProgress(){
+  const games = Store.list(); const st = computeStats(games, Store.settings);
+  const done = new Set(achievementState(st).filter(a=>a.done).map(a=>a.id));
+  const lv = levelInfo(computeXP(games, Store.settings)).level;
+  if (lastAch){
+    const fresh = ACHIEVEMENTS.filter(a => done.has(a.id) && !lastAch.has(a.id));
+    fresh.forEach((a,i) => setTimeout(() => { toast(a.desc, a.color, '★ LOGRO: ' + a.name.toUpperCase()); sfx('ach'); }, 600 + i*700));
+    if (lastLevel && lv > lastLevel) setTimeout(() => { toast('Ahora eres ' + levelInfo(computeXP(games, Store.settings)).title, '#ffd23f', '▲ ¡SUBES A NIVEL ' + lv + '!'); }, 300);
+  }
+  lastAch = done; lastLevel = lv;
+}
+
+/* =========================================================
+   DIBUJAR LA PANTALLA ACTUAL
+   ========================================================= */
+function render(){
+  document.body.classList.toggle('crt', !!Store.settings.crt);
+  renderNav();
+  const v = UI.view;
+  $('#fab').classList.toggle('hidden', v!=='juegos' || Store.mode==='loading');
+  const app = $('#app');
+  if (Store.mode === 'loading'){ app.innerHTML = `<div class="logo">${logoLetters()}</div><p class="tagline blink">CARGANDO PARTIDA...</p>`; return; }
+  ({ inicio:viewHome, juegos:viewGames, stats:viewStats, logros:viewAch, copia:viewBackup, ajustes:viewSettings }[v] || viewHome)(app);
+}
+
+function renderNav(){
+  const items = [['inicio','Inicio','home'],['juegos','Juegos','pad'],['stats','Stats','bars'],['logros','Logros','cup'],['copia','Copia','disk']];
+  $('#nav').innerHTML = items.map(([v,l,i]) => `<button data-go="${v}" class="${UI.view===v?'on':''}" aria-label="${l}">${pxIcon(ICONS[i])}<span>${l}</span></button>`).join('');
+}
+function logoLetters(){
+  const cols = ['#ff5c5c','#ffd23f','#4ade80','#5cc8ff','#b07cff','#ff9f43','#ff5c5c'];
+  return [...'GAMELOG'].map((c,i) => `<span style="color:${cols[i]};animation-delay:${i*.12}s">${c}</span>`).join('');
+}
+
+/* ---------- INICIO ---------- */
+function viewHome(app){
+  const games = Store.list(), st = computeStats(games, Store.settings), lv = levelInfo(computeXP(games, Store.settings));
+  const needBackup = games.length >= 3 && (!Store.settings.lastBackup || (Store.settings.lastChange||0) > new Date(Store.settings.lastBackup).getTime() + 7*864e5);
+  const status = `<p class="status-pill ok">● GUARDADO EN ESTE DISPOSITIVO · FUNCIONA SIN INTERNET</p>`;
+  app.innerHTML = `
+    <div class="logo">${logoLetters()}</div>
+    <p class="tagline">TU COLECCIÓN · TU HISTORIA<br><span class="blink" style="color:var(--yel)">PULSA START</span></p>
+    <div class="box player" style="max-width:520px;margin:0 auto 22px">
+      <div class="lvl"><small>NIVEL</small><b>${lv.level}</b></div>
+      <div>
+        <div class="px" style="font-size:10px;line-height:1.6">${esc(Store.settings.player||'JUGADOR 1')}</div>
+        <div class="muted">${esc(lv.title)} · ${fmtNum(lv.xp)} XP</div>
+        <div class="xpbar" title="${fmtNum(lv.xp-lv.cur)} de ${fmtNum(lv.next-lv.cur)} XP"><i style="width:${Math.round(lv.pct*100)}%"></i></div>
+        <div class="muted" style="font-size:17px;margin-top:4px">Faltan ${fmtNum(lv.next - lv.xp)} XP para el nivel ${lv.level+1}</div>
+      </div>
+    </div>
+    ${needBackup ? `<div class="banner"><span>Hace tiempo que no guardas una copia de tus datos.</span><button class="btn sm" data-go="copia">Guardar copia</button></div>` : ''}
+    <div class="menu" id="menu">
+      <button class="btn" data-tab="todo">Mi colección <span class="cnt">${st.total}</span></button>
+      <button class="btn grn" data-tab="pasado">Pasados <span class="cnt">${st.pasado}</span></button>
+      <button class="btn red" data-tab="pendiente">Pendientes <span class="cnt">${st.pendiente}</span></button>
+      <button class="btn blu" data-tab="comprar">Por comprar <span class="cnt">${st.comprar}</span></button>
+      <button class="btn org" data-go="stats">Estadísticas <span class="cnt">${fmtNum(st.hours)} h</span></button>
+      <button class="btn pur" data-go="logros">Logros <span class="cnt">${achievementState(st).filter(a=>a.done).length}/${ACHIEVEMENTS.length}</span></button>
+      <button class="btn ghost" data-go="copia">Copia de seguridad <span class="cnt">◆</span></button>
+      <button class="btn ghost" data-go="ajustes">Ajustes <span class="cnt">⚙</span></button>
+    </div>
+    ${status}`;
+  // Moverse por el menú con las flechas del teclado, como en una consola
+  const btns = [...app.querySelectorAll('#menu button')];
+  btns.forEach((b,i) => b.addEventListener('keydown', e => {
+    if (e.key==='ArrowDown'){ e.preventDefault(); btns[(i+1)%btns.length].focus(); sfx('click'); }
+    if (e.key==='ArrowUp'){ e.preventDefault(); btns[(i-1+btns.length)%btns.length].focus(); sfx('click'); }
+  }));
+}
+
+/* ---------- COLECCIÓN ---------- */
+function viewGames(app){
+  const games = Store.list(), st = computeStats(games, Store.settings);
+  const list = filterGames(games, UI);
+  const tabs = [['todo','Todo',st.total,'#ffd23f'],['pasado','Pasados',st.pasado,STATUS.pasado.color],['pendiente','Pend.',st.pendiente,STATUS.pendiente.color],['comprar','Comprar',st.comprar,STATUS.comprar.color]];
+  const usedPlats = [...new Set(games.map(g=>g.platform))].filter(p => UI.fam==='all' || familyOf(p)===UI.fam).sort((a,b)=>a.localeCompare(b,'es'));
+  const famBtns = [['all','Todas','#f2f2f2'], ...Object.entries(FAMILIES).filter(([k]) => k!=='otras' || games.some(g=>familyOf(g.platform)==='otras')).map(([k,f]) => [k,f.name,f.color])];
+  const sorts = { reciente:'Últimos añadidos', fecha:'Fecha en que lo pasé', nota:'Nota', titulo:'Título A-Z', horas:'Horas jugadas', prioridad:'Prioridad', precio:'Precio' };
+  const hasFilters = UI.q || UI.fam!=='all' || UI.plat!=='all' || UI.minRating;
+
+  app.innerHTML = `
+    <h2 class="ttl">MI COLECCIÓN</h2>
+    <div class="tabs" role="tablist">${tabs.map(([k,l,n,c]) => `<button role="tab" aria-selected="${UI.tab===k}" data-settab="${k}" class="${UI.tab===k?'on':''}" style="${UI.tab===k?`background:${c}`:''}">${l}<b>${n}</b></button>`).join('')}</div>
+    <div class="filters">
+      <input type="search" class="wide" id="q" placeholder="Buscar juego, consola o nota..." value="${esc(UI.q)}" aria-label="Buscar">
+    </div>
+    <div class="fams" aria-label="Filtrar por familia">${famBtns.map(([k,l,c]) => `<button class="chip ${UI.fam===k?'fill':''}" data-fam="${k}" style="color:${c};${UI.fam===k?`background:${c}`:''}">${l}</button>`).join('')}</div>
+    <div class="filters">
+      <select id="plat" aria-label="Consola"><option value="all">Todas las consolas</option>${usedPlats.map(p=>`<option ${UI.plat===p?'selected':''}>${esc(p)}</option>`).join('')}</select>
+      <select id="minr" aria-label="Nota mínima"><option value="0">Cualquier nota</option>${[5,6,7,8,9,10].map(n=>`<option value="${n}" ${UI.minRating==n?'selected':''}>Nota ${n}${n<10?' o más':''}</option>`).join('')}</select>
+      <select id="sort" class="wide" aria-label="Ordenar">${Object.entries(sorts).map(([k,l]) => `<option value="${k}" ${UI.sort===k?'selected':''}>Ordenar: ${l}</option>`).join('')}</select>
+    </div>
+    <div class="list-info">${list.length} ${list.length===1?'JUEGO':'JUEGOS'}${hasFilters?` · <a href="#juegos" id="clearF" style="color:var(--yel)">QUITAR FILTROS</a>`:''}${UI.tab==='comprar'?` · TOTAL ${fmtEur(list.reduce((a,g)=>a+(Number(g.price)||0),0))}`:''}</div>
+    ${list.length ? `<div class="grid">${list.map(cardHTML).join('')}</div>` : emptyHTML(games.length)}`;
+
+  const q = $('#q'); let tq;
+  q.oninput = () => { clearTimeout(tq); tq = setTimeout(() => { UI.q = q.value; const pos = q.selectionStart; render(); const nq = $('#q'); nq.focus(); nq.setSelectionRange(pos,pos); }, 220); };
+  $('#plat').onchange = e => { UI.plat = e.target.value; render(); };
+  $('#minr').onchange = e => { UI.minRating = Number(e.target.value); render(); };
+  $('#sort').onchange = e => { UI.sort = e.target.value; render(); };
+  const cf = $('#clearF'); if (cf) cf.onclick = e => { e.preventDefault(); Object.assign(UI,{q:'',fam:'all',plat:'all',minRating:0}); render(); };
+}
+
+function cardHTML(g){
+  const c = famColor(g.platform), s = STATUS[g.status];
+  let meta = '', move = '';
+  if (g.status==='pasado') meta = `<span style="color:var(--yel)">${g.rating?'★ '+g.rating+'/10':'— sin nota'}</span><span class="muted">${g.finishedAt?g.finishedAt.slice(0,4):''}</span>`;
+  if (g.status==='pendiente'){ meta = `<span style="color:${s.color}">PENDIENTE</span><span class="muted">${g.hours?fmtH(g.hours)+' h':''}</span>`; move = `<button class="btn sm grn full mv" data-move="${g.id}">▶ Pasado</button>`; }
+  if (g.status==='comprar'){ meta = `<span style="color:${s.color}">${g.price?fmtEur(g.price):'¿precio?'}</span>`; move = `<button class="btn sm red full mv" data-move="${g.id}">▶ Ya lo tengo</button>`; }
+  const pr = g.status==='comprar' && PRIORITY[g.priority] ? `<span class="chip fill prio" style="background:${PRIORITY[g.priority].color}">${PRIORITY[g.priority].name}</span>` : '';
+  return `<article class="card" tabindex="0" data-open="${g.id}" style="--c:${c}" aria-label="${esc(g.title)}, ${esc(g.platform)}, ${s.one}">
+    <div class="cv">${coverHTML(g)}</div>
+    ${g.complete100 && g.status==='pasado' ? '<span class="badge100">100%</span>' : ''}${pr}
+    <div class="bd"><div class="t">${esc(g.title)}</div>
+      <div><span class="chip" style="color:${c}">${esc(g.platform)}</span></div>
+      <div class="meta">${meta}</div>${move}</div>
+  </article>`;
+}
+function emptyHTML(total){
+  const msg = total ? ['NADA POR AQUÍ','Ningún juego coincide con estos filtros.'] : ['TU ESTANTERÍA ESTÁ VACÍA','Añade tu primer juego y empieza a ganar XP.'];
+  return `<div class="empty box"><div style="width:72px;margin:0 auto 14px">${pxIcon(ICONS.pad,'#ffd23f')}</div>
+    <div class="px" style="font-size:11px;line-height:1.6;margin-bottom:8px">${msg[0]}</div><p class="muted">${msg[1]}</p>
+    ${total?'':`<button class="btn grn" data-add>+ Añadir juego</button>`}</div>`;
+}
+
+/* ---------- FICHA DE UN JUEGO ---------- */
+function openDetail(id){
+  const g = Store.games.get(id); if (!g) return;
+  const c = famColor(g.platform), s = STATUS[g.status];
+  const info = [];
+  if (g.status==='pasado'){ info.push(['Nota', g.rating ? g.rating+'/10' : '—'], ['Pasado el', g.finishedAt ? fmtDate(g.finishedAt) : '—'], ['Horas', g.hours ? fmtH(g.hours) : '—'], ['100 %', g.complete100 ? 'SÍ ★' : 'No']); }
+  if (g.status==='pendiente'){ info.push(['Horas', g.hours ? fmtH(g.hours) : '0'], ['Nota', g.rating ? g.rating+'/10' : '—']); }
+  if (g.status==='comprar'){ info.push(['Precio', g.price ? fmtEur(g.price) : '—'], ['Prioridad', (PRIORITY[g.priority]||PRIORITY.media).name]); }
+  const moveBtn = g.status==='comprar' ? `<button class="btn red wide" data-move="${g.id}">▶ Ya lo tengo · a Pendientes</button>`
+    : g.status==='pendiente' ? `<button class="btn grn wide" data-move="${g.id}">▶ Me lo he pasado</button>` : '';
+  openModal(`
+    <div class="winhead"><span class="chip fill" style="background:${s.color}">${s.one}</span><button class="x" data-close aria-label="Cerrar">X</button></div>
+    <div class="detail-top" style="--c:${c}">
+      <div class="pv">${coverHTML(g)}</div>
+      <div><h2 class="px" style="font-size:12px;line-height:1.6;margin:0 0 8px;word-break:break-word">${esc(g.title)}</h2>
+        <span class="chip" style="color:${c}">${esc(g.platform)}</span>
+        <div class="stats-mini">${info.map(([k,v]) => `<div class="muted">${k}<b style="color:var(--txt)">${esc(v)}</b></div>`).join('')}</div>
+      </div>
+    </div>
+    ${g.notes ? `<div class="notes">${esc(g.notes)}</div>` : ''}
+    <div class="actions">${moveBtn}<button class="btn" data-edit="${g.id}">Editar</button><button class="btn ghost" data-del="${g.id}">Borrar</button></div>
+    <p class="muted" style="font-size:16px;margin-top:14px">Añadido el ${new Date(g.createdAt||Date.now()).toLocaleDateString('es-ES')}</p>`);
+}
+
+/* ---------- FORMULARIO AÑADIR / EDITAR ---------- */
+function openForm(id, preset){
+  const editing = id ? Store.games.get(id) : null;
+  const g = editing ? { ...editing } : { id:newId(), title:'', platform:'', status:preset || (UI.tab!=='todo'?UI.tab:'pendiente'), rating:null, finishedAt:'', hours:null, complete100:false, price:null, priority:'media', notes:'', cover:'', createdAt:Date.now() };
+  const groups = Object.entries(FAMILIES).map(([k,f]) => {
+    const list = k==='otras' ? (Store.settings.customPlatforms||[]) : f.list;
+    return list.length ? `<optgroup label="${f.name}">${list.map(p => `<option ${g.platform===p?'selected':''}>${esc(p)}</option>`).join('')}</optgroup>` : '';
+  }).join('');
+  const knownPlat = !g.platform || allPlatforms().includes(g.platform);
+
+  openModal(`
+    <div class="winhead"><h2>${editing ? 'EDITAR JUEGO' : 'NUEVO JUEGO'}</h2><button class="x" data-close aria-label="Cerrar">X</button></div>
+    <form id="gf" novalidate>
+      <label class="f" for="fTitle">TÍTULO *</label>
+      <input type="text" id="fTitle" maxlength="120" value="${esc(g.title)}" placeholder="Nombre del juego" autofocus autocomplete="off">
+      <div class="err hidden" id="eTitle">Escribe el título del juego.</div>
+
+      <label class="f" for="fPlat">CONSOLA / PLATAFORMA *</label>
+      <select id="fPlat"><option value="">Elige una...</option>${groups}${!knownPlat?`<option selected>${esc(g.platform)}</option>`:''}<option value="__new">+ Añadir otra consola...</option></select>
+      <input type="text" id="fPlatNew" class="hidden" style="margin-top:8px" maxlength="40" placeholder="Nombre de la consola">
+      <div class="err hidden" id="ePlat">Elige o escribe una consola.</div>
+
+      <label class="f">ESTADO</label>
+      <div class="seg" id="fStatus">${Object.entries(STATUS).map(([k,s]) => `<button type="button" data-st="${k}">${s.one}</button>`).join('')}</div>
+
+      <div data-for="pasado pendiente">
+        <label class="f" data-for="pasado">NOTA (1-10)</label>
+        <div class="rate" id="fRate" data-for="pasado">${Array.from({length:10},(_,i)=>`<button type="button" data-r="${i+1}">${i+1}</button>`).join('')}</div>
+        <div class="two">
+          <div data-for="pasado"><label class="f" for="fDate">FECHA EN QUE LO PASÉ</label><input type="date" id="fDate" value="${esc(g.finishedAt||'')}" max="${today()}"></div>
+          <div><label class="f" for="fHours">HORAS JUGADAS</label><input type="number" id="fHours" min="0" step="0.5" inputmode="decimal" value="${g.hours ?? ''}" placeholder="0"></div>
+        </div>
+        <div class="check ${g.complete100?'on':''}" id="fFull" data-for="pasado" role="checkbox" tabindex="0" aria-checked="${!!g.complete100}"><i>${g.complete100?'✓':''}</i> Lo he completado al 100 %</div>
+      </div>
+
+      <div data-for="comprar" class="two">
+        <div><label class="f" for="fPrice">PRECIO (€)</label><input type="number" id="fPrice" min="0" step="0.01" inputmode="decimal" value="${g.price ?? ''}" placeholder="0,00"></div>
+        <div><label class="f" for="fPrio">PRIORIDAD</label><select id="fPrio">${Object.entries(PRIORITY).map(([k,p]) => `<option value="${k}" ${g.priority===k?'selected':''}>${p.name}</option>`).join('')}</select></div>
+      </div>
+
+      <label class="f">PORTADA (OPCIONAL)</label>
+      <div class="photo">
+        <div class="pv" id="fPv">${coverHTML(g)}</div>
+        <div style="display:grid;gap:10px">
+          <label class="btn blu sm" style="cursor:pointer">▲ Subir foto<input type="file" id="fFile" accept="image/*" class="sr"></label>
+          <button type="button" class="btn ghost sm ${g.cover?'':'hidden'}" id="fNoPic">Quitar foto</button>
+          <span class="muted" style="font-size:16px">Una captura o una foto de tu caja. Se recorta y se reduce sola.</span>
+        </div>
+      </div>
+
+      <label class="f" for="fNotes">NOTAS PERSONALES</label>
+      <textarea id="fNotes" maxlength="4000" placeholder="Qué te pareció, trucos, con quién lo jugaste...">${esc(g.notes||'')}</textarea>
+
+      <div class="actions"><button type="button" class="btn ghost" data-close>Cancelar</button><button type="submit" class="btn grn">${editing?'Guardar':'Añadir'}</button></div>
+    </form>`, m => {
+    // Mostrar solo los campos que tocan según el estado
+    const setStatus = st => {
+      g.status = st;
+      m.querySelectorAll('#fStatus button').forEach(b => { const on = b.dataset.st===st; b.style.background = on ? STATUS[b.dataset.st].color : ''; b.style.color = on ? '#0d1024' : ''; b.setAttribute('aria-pressed', on); });
+      m.querySelectorAll('[data-for]').forEach(el => el.classList.toggle('hidden', !el.dataset.for.split(' ').includes(st)));
+    };
+    m.querySelectorAll('#fStatus button').forEach(b => b.onclick = () => { setStatus(b.dataset.st); sfx('click'); });
+    setStatus(g.status);
+    const paintRate = () => m.querySelectorAll('#fRate button').forEach(b => b.classList.toggle('on', g.rating && Number(b.dataset.r) <= g.rating));
+    m.querySelectorAll('#fRate button').forEach(b => b.onclick = () => { const r = Number(b.dataset.r); g.rating = g.rating===r ? null : r; paintRate(); sfx('click'); });
+    paintRate();
+    const full = $('#fFull', m);
+    const toggleFull = () => { g.complete100 = !g.complete100; full.classList.toggle('on', g.complete100); full.setAttribute('aria-checked', g.complete100); $('i', full).textContent = g.complete100 ? '✓' : ''; sfx('click'); };
+    full.onclick = toggleFull; full.onkeydown = e => { if (e.key===' '||e.key==='Enter'){ e.preventDefault(); toggleFull(); } };
+    const plat = $('#fPlat', m), platNew = $('#fPlatNew', m);
+    plat.onchange = () => { platNew.classList.toggle('hidden', plat.value !== '__new'); if (plat.value==='__new') platNew.focus(); $('#ePlat',m).classList.add('hidden'); };
+    $('#fTitle', m).oninput = () => $('#eTitle',m).classList.add('hidden');
+    // Foto: se recorta a formato caja (3:4) y se comprime
+    $('#fFile', m).onchange = async e => {
+      const file = e.target.files[0]; if (!file) return;
+      try { g.cover = await compressImage(file); $('#fPv', m).innerHTML = coverHTML(g); $('#fNoPic', m).classList.remove('hidden'); sfx('coin'); }
+      catch(err){ toast('No he podido leer esa imagen. Prueba con otra.', '#ff5c5c'); }
+    };
+    $('#fNoPic', m).onclick = () => { g.cover = ''; $('#fPv', m).innerHTML = coverHTML({ ...g, title:$('#fTitle',m).value||'?' }); $('#fNoPic', m).classList.add('hidden'); };
+
+    $('#gf', m).onsubmit = async e => {
+      e.preventDefault();
+      g.title = $('#fTitle', m).value.trim();
+      let p = plat.value; if (p === '__new') p = platNew.value.trim();
+      let ok = true;
+      if (!g.title){ $('#eTitle', m).classList.remove('hidden'); ok = false; }
+      if (!p){ $('#ePlat', m).classList.remove('hidden'); ok = false; }
+      if (!ok){ sfx('err'); return; }
+      if (!allPlatforms().includes(p)) await Store.saveSettings({ customPlatforms:[...(Store.settings.customPlatforms||[]), p] }, true);
+      const wasPasado = editing && editing.status === 'pasado';
+      g.platform = p;
+      g.hours = $('#fHours', m).value === '' ? null : Math.max(0, Math.round(Number($('#fHours', m).value)*10)/10);
+      g.finishedAt = $('#fDate', m).value || (g.status==='pasado' && !g.finishedAt ? today() : g.finishedAt);
+      g.price = $('#fPrice', m).value === '' ? null : Math.max(0, Math.round(Number($('#fPrice', m).value)*100)/100);
+      g.priority = $('#fPrio', m).value;
+      g.notes = $('#fNotes', m).value;
+      if (editing && editing.status==='comprar' && g.status!=='comprar') g.wasWish = true;
+      closeModal();
+      try { await Store.saveGame(g); } catch(err){ return; }
+      if (g.status==='pasado' && !wasPasado) stageClear(g);
+      else { toast(editing ? 'Cambios guardados' : '¡Añadido a ' + STATUS[g.status].name + '!', STATUS[g.status].color); sfx('coin'); }
+      checkProgress();
+    };
+  });
+}
+
+/** Reduce la foto: recorte 3:4 de 360×480 px en JPEG (≈30-50 KB) */
+function compressImage(file){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const W = 360, H = 480, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d'); const r = Math.max(W/img.width, H/img.height);
+      const w = img.width*r, h = img.height*r;
+      ctx.fillStyle = '#2e3466'; ctx.fillRect(0,0,W,H);
+      ctx.drawImage(img, (W-w)/2, (H-h)/2, w, h);
+      URL.revokeObjectURL(url);
+      let q = .78, out = cv.toDataURL('image/jpeg', q);
+      while (out.length > 90000 && q > .4){ q -= .1; out = cv.toDataURL('image/jpeg', q); }
+      res(out);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); };
+    img.src = url;
+  });
+}
+
+/* ---------- MOVER ENTRE LISTAS ---------- */
+function moveGame(id){
+  const g = Store.games.get(id); if (!g) return;
+  if (g.status === 'comprar'){
+    Store.saveGame({ ...g, status:'pendiente', wasWish:true }).then(() => {
+      closeModal(); toast('«' + g.title + '» ya está en tu estantería', STATUS.pendiente.color, '▶ ¡NUEVO JUEGO!'); sfx('coin'); checkProgress();
+    }).catch(()=>{});
+  } else if (g.status === 'pendiente'){
+    // Antes de celebrar, pedimos los datos de cuando te lo pasaste
+    const d = { rating:g.rating||null, finishedAt:today(), hours:g.hours, complete100:false };
+    openModal(`
+      <div class="winhead"><h2>¡TE LO HAS PASADO!</h2><button class="x" data-close aria-label="Cerrar">X</button></div>
+      <p class="muted">«${esc(g.title)}» · rellena lo que quieras, todo se puede cambiar luego.</p>
+      <label class="f">NOTA (1-10)</label>
+      <div class="rate" id="mRate">${Array.from({length:10},(_,i)=>`<button type="button" data-r="${i+1}">${i+1}</button>`).join('')}</div>
+      <div class="two"><div><label class="f" for="mDate">FECHA</label><input type="date" id="mDate" value="${d.finishedAt}" max="${today()}"></div>
+        <div><label class="f" for="mHours">HORAS</label><input type="number" id="mHours" min="0" step="0.5" inputmode="decimal" value="${g.hours ?? ''}" placeholder="0"></div></div>
+      <div class="check" id="mFull" role="checkbox" tabindex="0" aria-checked="false"><i></i> Lo he completado al 100 %</div>
+      <div class="actions"><button class="btn ghost" data-close>Cancelar</button><button class="btn grn" id="mOk">★ Stage clear</button></div>`, m => {
+      const paint = () => m.querySelectorAll('#mRate button').forEach(b => b.classList.toggle('on', d.rating && Number(b.dataset.r) <= d.rating));
+      m.querySelectorAll('#mRate button').forEach(b => b.onclick = () => { d.rating = Number(b.dataset.r); paint(); sfx('click'); }); paint();
+      const f = $('#mFull', m); const tg = () => { d.complete100 = !d.complete100; f.classList.toggle('on', d.complete100); f.setAttribute('aria-checked', d.complete100); $('i',f).textContent = d.complete100?'✓':''; };
+      f.onclick = tg; f.onkeydown = e => { if (e.key===' '||e.key==='Enter'){ e.preventDefault(); tg(); } };
+      $('#mOk', m).onclick = async () => {
+        const h = $('#mHours', m).value;
+        const ng = { ...g, status:'pasado', rating:d.rating, finishedAt:$('#mDate', m).value || today(), hours: h==='' ? null : Math.round(Number(h)*10)/10, complete100:d.complete100 };
+        closeModal();
+        try { await Store.saveGame(ng); } catch(e){ return; }
+        stageClear(ng); checkProgress();
+      };
+    });
+  }
+}
+function stageClear(g){
+  sfx('clear');
+  const gain = 100 + (g.complete100 ? 50 : 0);
+  celebrate('STAGE CLEAR!', g.title.toUpperCase(), '#4ade80',
+    `<div class="px" style="font-size:12px;color:var(--yel);margin-top:18px">+${gain} XP${g.complete100?' · 100% ★':''}</div>`);
+}
+
+/* ---------- ESTADÍSTICAS ---------- */
+function viewStats(app){
+  const games = Store.list(), st = computeStats(games, Store.settings);
+  const kpi = (l,v,c) => `<div class="kpi" style="--c:${c}"><small>${l}</small><b>${v}</b></div>`;
+  const plat = Object.entries(st.byPlatform).sort((a,b)=>b[1]-a[1]);
+  const maxP = Math.max(1, ...plat.map(p=>p[1]));
+  const years = Object.keys(st.byYear).sort();
+  if (years.length){ const y0 = Number(years[0]), y1 = Math.max(Number(years[years.length-1]), new Date().getFullYear()); years.length = 0; for (let y=Math.max(y0, y1-11); y<=y1; y++) years.push(String(y)); }
+  const maxY = Math.max(1, ...years.map(y=>st.byYear[y]||0));
+  const maxR = Math.max(1, ...st.ratings);
+  const fams = Object.entries(st.byFamily).sort((a,b)=>b[1]-a[1]);
+
+  app.innerHTML = `
+    <h2 class="ttl">ESTADÍSTICAS</h2>
+    <div class="kpis">
+      ${kpi('JUEGOS PASADOS', fmtNum(st.pasado), '#4ade80')}
+      ${kpi('HORAS JUGADAS', fmtNum(st.hours), '#5cc8ff')}
+      ${kpi('NOTA MEDIA', st.rated ? fmtNum(st.avg,1) : '—', '#ffd23f')}
+      ${kpi('AL 100 %', fmtNum(st.complete), '#ffd23f')}
+      ${kpi('PENDIENTES', fmtNum(st.pendiente), '#ff5c5c')}
+      ${kpi('VALOR LISTA DESEOS', fmtEur(st.wishValue), '#5cc8ff')}
+    </div>
+    ${!st.pasado ? `<div class="box panel" style="margin-top:20px"><p class="muted" style="margin:0">Cuando te pases juegos, aquí verás tus gráficas por consola y por año.</p></div>` : `
+    <h3 class="sub">PASADOS POR CONSOLA</h3>
+    <div class="hbars">${plat.map(([p,n]) => `<div class="hbar" style="--c:${famColor(p)}"><span>${esc(p)}</span><div class="tr"><i style="width:${n/maxP*100}%"></i></div><b class="px" style="font-size:9px">${n}</b></div>`).join('')}</div>
+    <h3 class="sub">POR FAMILIA</h3>
+    <div style="display:flex;height:26px;border:3px solid var(--line)">${fams.map(([f,n]) => `<div title="${FAMILIES[f].name}: ${n}" style="flex:${n};background:${FAMILIES[f].color}"></div>`).join('')}</div>
+    <div class="row" style="margin-top:8px">${fams.map(([f,n]) => `<span class="chip" style="color:${FAMILIES[f].color}">${FAMILIES[f].name} ${Math.round(n/st.pasado*100)}%</span>`).join('')}</div>
+    ${years.length ? `<h3 class="sub">PASADOS POR AÑO</h3>
+      <div class="vbars">${years.map(y => `<div class="vbar" style="--c:#4ade80"><b>${st.byYear[y]||''}</b><i style="height:${(st.byYear[y]||0)/maxY*100}%"></i></div>`).join('')}</div>
+      <div class="vlabels">${years.map(y=>`<span>'${y.slice(2)}</span>`).join('')}</div>` : ''}
+    ${st.rated ? `<h3 class="sub">TUS NOTAS</h3>
+      <div class="vbars" style="height:120px">${st.ratings.map((n,i) => `<div class="vbar" style="--c:${i>=8?'#4ade80':i>=5?'#ffd23f':'#ff5c5c'}"><b>${n||''}</b><i style="height:${n/maxR*100}%"></i></div>`).join('')}</div>
+      <div class="vlabels">${st.ratings.map((_,i)=>`<span>${i+1}</span>`).join('')}</div>` : ''}
+    <h3 class="sub">RÉCORDS</h3>
+    <div class="kpis">
+      ${st.best ? kpi('MEJOR NOTA · ' + esc(st.best.title).toUpperCase(), st.best.rating + '/10', '#ff9f43') : ''}
+      ${st.longest ? kpi('MÁS HORAS · ' + esc(st.longest.title).toUpperCase(), fmtNum(st.longest.hours) + ' h', '#b07cff') : ''}
+      ${kpi('CONSOLA FAVORITA', plat[0] ? esc(plat[0][0]) : '—', plat[0] ? famColor(plat[0][0]) : '#f2f2f2')}
+    </div>`}`;
+}
+
+/* ---------- LOGROS Y NIVELES ---------- */
+function viewAch(app){
+  const games = Store.list(), st = computeStats(games, Store.settings);
+  const ach = achievementState(st), lv = levelInfo(computeXP(games, Store.settings));
+  const done = ach.filter(a=>a.done).length;
+  app.innerHTML = `
+    <h2 class="ttl">LOGROS · ${done}/${ach.length}</h2>
+    <div class="ach">${ach.map(a => `<div class="medal ${a.done?'':'lock'}" style="--c:${a.color}">
+      ${pxIcon(a.done ? ICONS.medal : ICONS.lock, a.done ? a.color : '#6b72a8')}
+      <b>${esc(a.name)}</b><p>${esc(a.desc)}</p>
+      ${a.done ? `<p class="px" style="font-size:7px;color:${a.color};margin-top:8px">CONSEGUIDO</p>` : `<div class="pg"><i style="width:${a.v/a.goal*100}%"></i></div><p style="margin-top:4px">${fmtNum(a.v)}/${fmtNum(a.goal)}</p>`}
+    </div>`).join('')}</div>
+    <h3 class="sub">NIVELES · ERES NIVEL ${lv.level}</h3>
+    <p class="muted">Ganas XP así: pasarte un juego +100 · al 100 % +50 extra · pendiente +10 · por comprar +5 · cada logro +50.</p>
+    <div class="levels">${LEVEL_TITLES.map((t,i) => `<div class="${lv.level===i+1 || (i===LEVEL_TITLES.length-1 && lv.level>i)?'on':''}"><span>NV ${i+1}${i===LEVEL_TITLES.length-1?'+':''} · ${t}</span><span>${fmtNum(100*(i+1)*i)} XP</span></div>`).join('')}</div>`;
+}
+
+/* ---------- COPIA DE SEGURIDAD ---------- */
+function backupJSON(withPhotos){
+  const games = Store.list().map(g => withPhotos ? g : { ...g, cover:'' });
+  return JSON.stringify({ app:'gamelog', version:1, exportedAt:new Date().toISOString(), games, settings:Store.settings }, null, 1);
+}
+function viewBackup(app){
+  const n = Store.games.size, last = Store.settings.lastBackup;
+  app.innerHTML = `
+    <h2 class="ttl">COPIA DE SEGURIDAD</h2>
+    <div class="box panel">
+      <div class="px" style="font-size:9px;line-height:1.7;color:var(--grn)">● TUS DATOS SE GUARDAN EN ESTE DISPOSITIVO</div>
+      <p class="muted" style="margin:8px 0 0">Si cambias de móvil, lo pierdes o borras los datos de Safari, solo podrás recuperarlos con una copia. Guárdala en iCloud Drive, Google Drive o mándatela por correo.</p>
+      <p style="margin:10px 0 0">Última copia: <b style="color:var(--yel)">${last ? new Date(last).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}) : 'nunca'}</b></p>
+    </div>
+
+    <div class="box panel">
+      <h3 class="sub" style="margin-top:0">▼ EXPORTAR (${n} juegos)</h3>
+      <p class="muted" style="margin-top:0">Crea un archivo .json con todo. En el móvil se abre el menú de compartir: elige «Guardar en Archivos», Drive o Mail.</p>
+      <div class="check on" id="bPics" role="checkbox" tabindex="0" aria-checked="true"><i>✓</i> Incluir fotos (el archivo pesa más)</div>
+      <div style="display:grid;gap:10px;margin-top:14px">
+        <button class="btn grn full" id="bExport">▼ Guardar copia</button>
+        <button class="btn ghost full" id="bCopy">Copiar como texto</button>
+      </div>
+      <div id="bOut" class="hidden" style="margin-top:12px"><p class="muted">Copia este texto y pégalo en una nota o un correo para guardarlo:</p><textarea id="bTxt" readonly style="min-height:120px;font-size:14px"></textarea></div>
+    </div>
+
+    <div class="box panel">
+      <h3 class="sub" style="margin-top:0">▲ IMPORTAR</h3>
+      <p class="muted" style="margin-top:0">Recupera tus juegos desde un archivo de copia (o pegando su texto).</p>
+      <div style="display:grid;gap:10px">
+        <label class="btn blu full" style="cursor:pointer">▲ Elegir archivo .json<input type="file" id="bFile" accept=".json,application/json,text/plain" class="sr"></label>
+        <textarea id="bPaste" placeholder="...o pega aquí el texto de la copia" style="min-height:70px;font-size:16px"></textarea>
+        <button class="btn ghost full" id="bPasteGo">Importar texto pegado</button>
+        <div id="bMsg" class="px" style="font-size:8px;line-height:1.7;color:var(--yel)"></div>
+      </div>
+    </div>`;
+
+  let withPics = true; const pics = $('#bPics');
+  const tg = () => { withPics = !withPics; pics.classList.toggle('on', withPics); pics.setAttribute('aria-checked', withPics); $('i',pics).textContent = withPics?'✓':''; };
+  pics.onclick = tg; pics.onkeydown = e => { if (e.key===' '||e.key==='Enter'){ e.preventDefault(); tg(); } };
+  const markDone = () => Store.saveSettings({ lastBackup:new Date().toISOString() }).then(checkProgress);
+  const showText = () => { const out = $('#bOut'); out.classList.remove('hidden'); $('#bTxt').value = backupJSON(withPics); return $('#bTxt'); };
+
+  $('#bExport').onclick = async () => {
+    if (!n){ toast('Todavía no hay juegos que guardar.', '#ffd23f'); return; }
+    const name = 'gamelog-copia-' + today() + '.json', data = backupJSON(withPics);
+    const file = new File([data], name, { type:'application/json' });
+    // En el móvil: abre el menú de compartir (Guardar en Archivos, Drive, Mail...)
+    if (navigator.canShare && navigator.canShare({ files:[file] })){
+      try { await navigator.share({ files:[file], title:'Copia de GAMELOG' }); toast('Copia enviada. ¡Partida a salvo!', '#4ade80', '◆ GUARDADO'); sfx('coin'); markDone(); }
+      catch(e){ if (e && e.name === 'AbortError') toast('Copia cancelada.', '#ffd23f'); else { toast('No se pudo compartir. Te lo dejo como texto.', '#ffd23f'); showText(); } }
+      return;
+    }
+    // En el ordenador: descarga normal del archivo
+    try {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+      markDone(); toast('Copia descargada.', '#4ade80', '◆ GUARDADO'); sfx('coin');
+    } catch(e){ showText(); }
+  };
+  $('#bCopy').onclick = async () => {
+    if (!n){ toast('Todavía no hay juegos que guardar.', '#ffd23f'); return; }
+    const ta = showText();
+    try { await navigator.clipboard.writeText(ta.value); toast('Copiado. Pégalo en una nota o correo.', '#4ade80'); markDone(); }
+    catch(e){ ta.select(); toast('Selecciona el texto y cópialo a mano.', '#ffd23f'); }
+  };
+  const doImport = async text => {
+    const msg = $('#bMsg');
+    let parsed;
+    try { parsed = validateBackup(JSON.parse(text)); }
+    catch(e){ msg.style.color = 'var(--red)'; msg.textContent = e instanceof SyntaxError ? 'ESE TEXTO NO ES UNA COPIA VÁLIDA.' : e.message.toUpperCase(); sfx('err'); return; }
+    if (!parsed.games.length){ msg.textContent = 'LA COPIA NO TIENE JUEGOS.'; return; }
+    openModal(`<div class="winhead"><h2>IMPORTAR ${parsed.games.length} JUEGOS</h2><button class="x" data-close aria-label="Cerrar">X</button></div>
+      <p>¿Qué hago con los ${Store.games.size} juegos que ya tienes?</p>
+      <div style="display:grid;gap:10px;margin-top:14px">
+        <button class="btn grn full" id="iMerge">Juntar con los míos</button>
+        <button class="btn red full" id="iReplace">Reemplazar todo</button>
+        <button class="btn ghost full" data-close>Cancelar</button>
+      </div>
+      <p class="muted" style="font-size:17px">«Juntar» añade los nuevos y actualiza los que coinciden. «Reemplazar» borra lo actual y deja solo la copia.</p>`, m => {
+      const run = async mode => {
+        closeModal(); msg.style.color = 'var(--yel)';
+        try {
+          await Store.importAll(parsed.games, mode, t => msg.textContent = t.toUpperCase());
+          if (parsed.settings && parsed.settings.customPlatforms){
+            const merged = [...new Set([...(Store.settings.customPlatforms||[]), ...parsed.settings.customPlatforms.filter(p => typeof p==='string')])];
+            await Store.saveSettings({ customPlatforms:merged }, true);
+          }
+          toast(parsed.games.length + ' juegos recuperados.', '#4ade80', '✓ IMPORTADO'); sfx('coin'); checkProgress();
+        } catch(e){ toast('La importación se cortó. Vuelve a intentarlo.', '#ff5c5c'); }
+      };
+      $('#iMerge', m).onclick = () => run('merge');
+      $('#iReplace', m).onclick = async () => { if (await confirmBox('Se borrarán tus ' + Store.games.size + ' juegos actuales y se quedarán solo los de la copia.', 'Reemplazar')) run('replace'); };
+    });
+  };
+  $('#bFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => doImport(r.result); r.readAsText(f); e.target.value = ''; };
+  $('#bPasteGo').onclick = () => { const t = $('#bPaste').value.trim(); if (!t){ $('#bMsg').textContent = 'PEGA PRIMERO EL TEXTO DE LA COPIA.'; return; } doImport(t); };
+}
+
+/* ---------- AJUSTES ---------- */
+function viewSettings(app){
+  const s = Store.settings;
+  app.innerHTML = `
+    <h2 class="ttl">AJUSTES</h2>
+    <div class="box panel">
+      <label class="f" for="sName">NOMBRE DE JUGADOR</label>
+      <input type="text" id="sName" maxlength="16" value="${esc(s.player||'')}" placeholder="JUGADOR 1">
+      <div class="toggle"><span>Sonidos de 8 bits</span><button class="switch ${s.sound?'on':''}" id="sSound" role="switch" aria-checked="${!!s.sound}" aria-label="Sonidos"></button></div>
+      <div class="toggle"><span>Efecto tele antigua (CRT)</span><button class="switch ${s.crt?'on':''}" id="sCrt" role="switch" aria-checked="${!!s.crt}" aria-label="Efecto CRT"></button></div>
+    </div>
+    <div class="box panel">
+      <h3 class="sub" style="margin-top:0">MIS CONSOLAS EXTRA</h3>
+      ${(s.customPlatforms||[]).length ? (s.customPlatforms).map((p,i) => `<div class="toggle"><span>${esc(p)}</span><button class="btn sm ghost" data-delplat="${i}">Quitar</button></div>`).join('') : '<p class="muted" style="margin:0">Las consolas que añadas al crear un juego aparecerán aquí.</p>'}
+      <div class="row" style="margin-top:12px;flex-wrap:nowrap"><input type="text" id="sPlat" maxlength="40" placeholder="Añadir consola"><button class="btn sm grn" id="sPlatAdd">+</button></div>
+    </div>
+    <div class="box panel">
+      <h3 class="sub" style="margin-top:0">ZONA PELIGROSA</h3>
+      <button class="btn red full" id="sWipe">Borrar todos mis juegos</button>
+      <p class="muted" style="font-size:17px">Haz antes una copia de seguridad. No se puede deshacer.</p>
+    </div>`;
+  let tn; $('#sName').oninput = e => { clearTimeout(tn); tn = setTimeout(() => Store.saveSettings({ player:e.target.value.trim().toUpperCase() || 'JUGADOR 1' }, true), 600); };
+  $('#sSound').onclick = async () => { await Store.saveSettings({ sound:!s.sound }); sfx('coin'); };
+  $('#sCrt').onclick = () => Store.saveSettings({ crt:!s.crt });
+  app.querySelectorAll('[data-delplat]').forEach(b => b.onclick = () => { const l = [...s.customPlatforms]; l.splice(Number(b.dataset.delplat),1); Store.saveSettings({ customPlatforms:l }); });
+  $('#sPlatAdd').onclick = () => { const v = $('#sPlat').value.trim(); if (!v || allPlatforms().includes(v)) return; Store.saveSettings({ customPlatforms:[...(s.customPlatforms||[]), v] }); };
+  $('#sWipe').onclick = async () => {
+    if (!Store.games.size) return;
+    if (await confirmBox('Vas a borrar tus ' + Store.games.size + ' juegos. ¿Has guardado una copia?', 'Borrar todo')) { await Store.importAll([], 'replace'); toast('Colección borrada.', '#ff5c5c'); sfx('del'); }
+  };
+}
+
+/* =========================================================
+   CLICS: un solo "escuchador" para toda la página
+   ========================================================= */
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-go],[data-tab],[data-settab],[data-fam],[data-open],[data-move],[data-edit],[data-del],[data-close],[data-add]');
+  if (!t) return;
+  const d = t.dataset;
+  if (d.move){ e.stopPropagation(); moveGame(d.move); return; }
+  if (d.go){ sfx('click'); go(d.go); }
+  else if (d.tab){ sfx('click'); UI.tab = d.tab; go('juegos'); }
+  else if (d.settab){ sfx('click'); UI.tab = d.settab; render(); }
+  else if (d.fam){ sfx('click'); UI.fam = d.fam; UI.plat = 'all'; render(); }
+  else if (d.open){ sfx('click'); openDetail(d.open); }
+  else if (d.edit){ openForm(d.edit); }
+  else if (d.add !== undefined){ openForm(); }
+  else if (d.close !== undefined){ closeModal(); }
+  else if (d.del){
+    const g = Store.games.get(d.del);
+    if (g && await confirmBox('Se borrará «' + g.title + '» para siempre.', 'Borrar')){ await Store.deleteGame(d.del).catch(()=>{}); toast('Juego borrado.', '#ff5c5c'); sfx('del'); }
+  }
+});
+document.addEventListener('keydown', e => {
+  const c = e.target.closest && e.target.closest('.card[data-open]');
+  if (c && (e.key === 'Enter' || e.key === ' ') && e.target === c){ e.preventDefault(); openDetail(c.dataset.open); }
+});
+$('#fab').onclick = () => { sfx('click'); openForm(); };
+
+/* ARRANQUE */
+UI.view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'inicio';
+render();
+Store.init(() => { render(); if (lastAch === null && Store.mode !== 'loading') checkProgress(); });
+
+/* Modo sin internet: guarda la app en el dispositivo la primera vez que se abre */
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
